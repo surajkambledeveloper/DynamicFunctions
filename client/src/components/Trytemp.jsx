@@ -11,6 +11,8 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import axios from "axios";
 import retryRequest from "../Utility/retryRequest";
+import { defaultResume14Data } from "../defaultResumeData/defaultResumeData14";
+import { confirmAlert } from "react-confirm-alert";
 
 // Add global styles for extra small text
 const globalStyles = `
@@ -35,6 +37,8 @@ const Sidebar = React.memo(
     handleUploadResume,
     handleColorPicker,
     handleSaveResume,
+    // handleResetResume,
+    confirmReset
   }) => {
     return (
       <>
@@ -88,6 +92,14 @@ const Sidebar = React.memo(
               title="Share"
             >
               <span className="text-xl sm:text-2xl">🔗</span>
+            </button>
+
+            <button
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-green-500 text-white rounded-full p-2 shadow-lg flex items-center justify-center"
+              onClick={confirmReset}
+              title="Share"
+            >
+              <span className="text-xl sm:text-2xl">🔄</span>
             </button>
 
             <div className="flex items-center ml-2 sm:ml-4">
@@ -178,6 +190,14 @@ const Sidebar = React.memo(
               <span className="text-lg">🔗</span>
               <span>Share</span>
             </button>
+ <button
+  className="w-full bg-blue-100 text-blue-700 rounded-full p-3 shadow flex items-center justify-start space-x-2 hover:bg-blue-200 transition"
+  onClick={confirmReset}
+>
+  <span className="text-lg">🔄</span>
+  <span className="font-medium">Reset to Default</span>
+</button>
+
 
             <div className="flex items-center justify-between mt-2 w-full">
               <span className="text-gray-800 font-medium">Branding</span>
@@ -216,91 +236,8 @@ const Sidebar = React.memo(
 );
 
 const ResumeEditor = () => {
-  const [resumeData, setResumeData] = useState({
-    name: "Aditya Tiwary",
-    role: "Full Stack Developer | JavaScript | React | Node.js",
-    phone: "123-456-7890",
-    email: "john.doe@example.com",
-    linkedin: "linkedin.com/in/johndoe",
-    location: "Pune, Maharashtra",
-
-    summary:
-      "Results-driven Full Stack Developer with 3+ years of experience in building scalable web applications using React, Node.js, and MongoDB. Proven ability to optimize performance, implement RESTful APIs, and deliver responsive UI designs. Strong knowledge of version control (Git), Agile methodologies, and cloud deployment strategies. Adept at collaborating with cross-functional teams to deliver high-quality, ATS-optimized solutions.",
-
-    experience: [
-      {
-        title: "Full Stack Developer",
-        companyName: "Tech Solutions Pvt Ltd",
-        date: "Jan 2022 - Present",
-        companyLocation: "Mumbai",
-        accomplishment: [
-          "Developed and deployed scalable web applications using React.js, Node.js, and MongoDB.",
-          "Improved API response time by 25% through backend optimization and efficient database queries.",
-          "Collaborated with UI/UX teams to implement responsive, cross-browser compatible designs.",
-        ],
-      },
-      {
-        title: "Frontend Developer Intern",
-        companyName: "Web Creators",
-        date: "Jun 2021 - Dec 2021",
-        companyLocation: "Pune",
-        accomplishment: [
-          "Built reusable UI components using React.js and improved code maintainability.",
-          "Integrated third-party APIs to fetch and display real-time data efficiently.",
-          "Participated in Agile sprints and collaborated with backend teams for seamless API integration.",
-        ],
-      },
-    ],
-
-    education: [
-      {
-        degree: "Bachelor of Engineering in Computer Science",
-        institution: "Savitribai Phule Pune University",
-        duration: "2017 - 2021",
-        location: "Pune",
-      },
-    ],
-
-    achievements: [
-      {
-        keyAchievements: "Best Project Award",
-        describe:
-          "Won the Best Final Year Project Award for developing a MERN stack-based AI Resume Builder with real-time PDF export functionality.",
-      },
-      {
-        keyAchievements: "Hackathon Winner",
-        describe:
-          "Secured 1st place in a 48-hour hackathon by building a scalable e-commerce platform using React and Node.js.",
-      },
-    ],
-
-    skills: [
-      "React.js",
-      "HTML5",
-      "CSS3",
-      "JavaScript",
-      "Tailwind CSS",
-      "Node.js",
-      "Express.js",
-      "MongoDB",
-      "RESTful APIs",
-      "Git",
-      "Postman",
-    ],
-
-    courses: [
-      {
-        title: "MERN Stack Development",
-        description:
-          "Completed an in-depth MERN stack course covering React, Node.js, Express, and MongoDB with hands-on projects.",
-      },
-      {
-        title: "AWS Cloud Practitioner",
-        description:
-          "Learned cloud deployment, serverless architecture, and AWS services essential for web applications.",
-      },
-    ],
-  });
+    
+const [resumeData, setResumeData] = useState(defaultResume14Data);
 
   const [showButtons, setShowButtons] = useState(true);
   const [photo, setPhoto] = useState(null);
@@ -632,6 +569,10 @@ const ResumeEditor = () => {
     }
   }, []);
 
+
+
+// suraj work start here 
+
   const fetchResume = useCallback(async () => {
     const resumeId = localStorage.getItem("resumeId");
     const templateId = "temp14"; // or dynamic
@@ -823,10 +764,73 @@ const ResumeEditor = () => {
     [resumeData, handleSaveResume, fetchResume]
   );
 
+
+  const handleResetResume = useCallback(async () => {
+  if (!resumeData._id) {
+    toast.error(" Cannot reset. Resume not saved yet.");
+    return;
+  }
+
+  console.log(" Resetting resume to default...");
+
+  const resetData = {
+    ...defaultResume14Data,
+    _id: resumeData._id,
+  };
+
+  setResumeData(resetData);
+
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/dynamic/resume/save",
+      { ...resetData, templateId: "temp14" }
+    );
+
+    if (response.status === 200) {
+      toast.success(" Resume reset to default!");
+      await fetchResume();
+    } else {
+      toast.error(" Failed to reset resume.");
+    }
+  } catch (err) {
+    console.error(" Reset Error:", err);
+    toast.error(" Error resetting resume.");
+  }
+}, [resumeData._id, fetchResume]);
+
+const confirmReset = useCallback(() => {
+  confirmAlert({
+    title: "Confirm Reset",
+    message:
+      "Are you sure you want to reset your resume to default? This will remove all unsaved changes.",
+    buttons: [
+      {
+        label: "Yes, Reset",
+        onClick: handleResetResume,
+      },
+      {
+        label: "Cancel",
+        onClick: () => console.log("Reset canceled by user."),
+      },
+    ],
+  });
+}, [handleResetResume]);
+
+
   //  useEffect:
-  useEffect(() => {
-    fetchResume();
-  }, [fetchResume]);
+  
+useEffect(() => {
+  const resumeId = localStorage.getItem("resumeId");
+
+  if (resumeId) {
+    fetchResume(); // from your earlier useCallback
+  } else {
+    console.log(" No saved resumeId, showing default dummy resume.");
+    setResumeData(defaultResume14Data);
+  }
+}, [fetchResume]);
+
+// suraj work end here 
 
   const handleShare = useCallback(() => {
     const resumeLink = window.location.href;
@@ -1025,6 +1029,8 @@ const ResumeEditor = () => {
         handleUploadResume={handleUploadResume}
         handleColorPicker={handleColorPicker}
         handleSaveResume={handleSaveResume}
+        // handleResetResume={handleResetResume}
+        confirmReset={confirmReset}
       />
 
       <div className="flex-1 p-2 sm:p-4 lg:p-6 overflow-auto flex justify-center">
