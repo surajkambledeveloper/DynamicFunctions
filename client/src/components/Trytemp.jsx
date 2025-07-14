@@ -646,7 +646,7 @@ const ResumeEditor = () => {
       }
     } catch (err) {
       console.error("Fetch resume error:", err);
-      toast.error("Failed to load resume.");
+      // toast.error("Failed to load resume.");
     }
   }, []); // no dependencies, or add ones if you reference variables
 
